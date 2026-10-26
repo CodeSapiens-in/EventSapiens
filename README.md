@@ -4,13 +4,6 @@
 > A shared place for students across Tamil Nadu to discover college hackathons, technical symposiums, workshops, and student developer opportunities.
 
 [![Validate Events & Lint](https://img.shields.io/badge/CI-Validate%20Events-amber.svg)](https://github.com/CodeSapiens-in/EventSapiens/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Brought to you by CodeSapiens](https://img.shields.io/badge/Community-CodeSapiens%20TamilNadu-orange.svg)](https://codesapiens.in)
-
-**Brought to you by CodeSapiens TamilNadu**  
-Licensed under MIT. Initiated by Kee ([Keerthana](https://www.linkedin.com/in/keerthana-m-g-12ba59256/)) and JK ([Jayakanth](https://www.linkedin.com/in/jayakanth-sivakumar-434851257/)).
-
-Inspired by the open-source community platform [TamilNadu.tech](https://tamilnadu.tech/) and tailored specifically for collegiate technical festivals, campus hackathons, workshops, and student developer opportunities across Tamil Nadu.
 
 ---
 
@@ -131,7 +124,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 💛 Attribution & Community
 
 - **Brought to you by:** [CodeSapiens TamilNadu](https://codesapiens.in)
-- **Initiated by:** Kee ([Keerthana](https://www.linkedin.com/in/keerthana-m-g-12ba59256/)) and JK ([Jayakanth](https://www.linkedin.com/in/jayakanth-sivakumar-434851257/))
 - **Inspiration:** [TamilNadu.tech](https://tamilnadu.tech/) — an inspiring open-source initiative uniting tech community meetups across Tamil Nadu.
 - **WhatsApp Community:** [Join CodeSapiens Chat](https://chat.whatsapp.com/IiaPFDThmGk9UEoYzvoXWU)
 - **LinkedIn:** [CodeSapiens Community](https://www.linkedin.com/company/codesapiens-community/posts/)
