@@ -17,10 +17,9 @@ EventSapien is built with modern web technologies:
 
 - **Frontend Framework:** React 19
 - **Language:** TypeScript (strict mode)
-- **Bundler & Dev Server:** Vite 6+
+- **Bundler & Dev Server:** Vite 8
 - **Styling:** Tailwind CSS v4 (with `@tailwindcss/vite`)
 - **Icons:** Lucide React (`lucide-react`)
-- **Animations:** Motion (`motion`)
 - **TOML Parsing:** `smol-toml`
 - **Decentralized Storage:** Flat TOML files in `events/` + JSON archive in `src/data/archived.json`
 
@@ -67,8 +66,10 @@ eventsapiens/
 │   ├── data/
 │   │   └── archived.json               # Concluded events historical archive
 │   ├── lib/
-│   │   ├── event-utils.ts              # Date parsing, filtering, and categorization
+│   │   ├── event-toml.ts               # Safe TOML generation and escaping
+│   │   ├── event-utils.ts              # Date parsing, validation, and filtering
 │   │   └── events-loader.ts            # Vite eager TOML loader
+│   ├── hooks/                           # Shared React behavior hooks
 │   ├── types/
 │   │   └── event.ts                    # TypeScript types and validation schemas
 │   ├── App.tsx                         # Main application root
@@ -78,6 +79,7 @@ eventsapiens/
 ├── CONTRIBUTING.md                     # Code contributor guide (this file)
 ├── CODE_OF_CONDUCT.md                  # Community standards
 ├── LICENSE                             # MIT Open Source License
+├── SECURITY.md                         # Vulnerability reporting policy
 ├── package.json                        # Scripts and dependencies
 └── vite.config.ts                      # Vite configuration
 ```
@@ -87,8 +89,8 @@ eventsapiens/
 ## 💻 Local Development Setup
 
 ### 1. Prerequisites
-- **Node.js:** 18.0.0 or higher (Node 20+ recommended)
-- **npm:** 9.0.0 or higher (or Bun/pnpm)
+- **Node.js:** 20.19.0 or higher (Node 22 LTS recommended)
+- **Bun:** 1.4.0 or higher
 - **Git**
 
 ### 2. Clone and Install
@@ -98,17 +100,17 @@ eventsapiens/
 git clone https://github.com/<your-username>/EventSapiens.git
 cd EventSapiens
 
-# Install dependencies
-npm install
+# Install the exact dependency versions from bun.lock
+bun install --frozen-lockfile
 ```
 
 ### 3. Start the Development Server
 
 ```bash
-npm run dev
+bun run dev
 ```
 
-The app will start at `http://localhost:3000`. Hot module reloading will automatically reflect your edits.
+The app will start at `http://localhost:5173`. Hot module reloading will automatically reflect your edits.
 
 ---
 
@@ -116,12 +118,13 @@ The app will start at `http://localhost:3000`. Hot module reloading will automat
 
 | Command | Purpose |
 | :--- | :--- |
-| `npm run dev` | Starts the Vite dev server on `http://localhost:3000` |
-| `npm run build` | Compiles TypeScript and builds production distribution in `dist/` |
-| `npm run lint` | Runs TypeScript compiler in `--noEmit` mode to catch type errors |
-| `npm run validate` | Validates all `.toml` files in `events/` against schema and date rules |
-| `npm run archive` | CLI utility to safely move concluded events into `src/data/archived.json` |
-| `npm run archive -- --dry-run` | Previews archiving without modifying files |
+| `bun run dev` | Starts the Vite dev server on `http://localhost:5173` |
+| `bun run build` | Compiles TypeScript and builds production distribution in `dist/` |
+| `bun run lint` | Runs TypeScript compiler in `--noEmit` mode to catch type errors |
+| `bun run validate` | Validates all `.toml` files in `events/` against schema and date rules |
+| `bun run archive` | CLI utility to safely move concluded events into `src/data/archived.json` |
+| `bun run archive:dry-run` | Previews archiving without modifying files |
+| `bun run check` | Runs validation, type checking, and a production build |
 
 ---
 
@@ -147,14 +150,7 @@ The app will start at `http://localhost:3000`. Hot module reloading will automat
 
 2. **Verify Quality Before Committing:**
    ```bash
-   # Type check:
-   npm run lint
-
-   # Event validation:
-   npm run validate
-
-   # Production build verification:
-   npm run build
+   bun run check
    ```
 
 3. **Commit Your Changes:**

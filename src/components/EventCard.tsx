@@ -1,12 +1,12 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React from 'react';
-import { MapPin, ExternalLink, Calendar, Layers, Clock } from 'lucide-react';
+import { ExternalLink, Layers, MapPin } from 'lucide-react';
 import type { EventItem } from '../types/event';
-import { formatDateRange, getRegistrationStatus } from '../lib/event-utils';
+import { getRegistrationStatus } from '../lib/event-utils';
 
 interface EventCardProps {
   event: EventItem;
@@ -25,8 +25,6 @@ export const EventCard: React.FC<EventCardProps> = ({
     referenceDateStr
   );
 
-  const formattedDate = formatDateRange(event.event_date, event.end_date);
-
   // Month tag color
   const monthName = new Date(event.event_date + 'T00:00:00Z').toLocaleString('en-US', {
     month: 'short',
@@ -40,14 +38,11 @@ export const EventCard: React.FC<EventCardProps> = ({
       onClick={() => onSelectEvent(event)}
       className="group bg-white border-[2.5px] border-black shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
     >
-      {/* Top Header Strip with Month Badge + Mode */}
       <div className="bg-[#FFF8DC] border-b-[2px] border-black px-4 py-2.5 flex items-center justify-between gap-2">
-        {/* Month Badge matching image_5b315586.png */}
         <div className="border-[2px] border-black bg-[#FFDE59] px-2 py-0.5 text-[11px] font-mono font-black uppercase tracking-wider text-black shadow-[1.5px_1.5px_0px_#000]">
           {monthName} {yearNum}
         </div>
 
-        {/* Mode tag */}
         <span
           className={`border-[1.5px] border-black px-2 py-0.5 text-[11px] font-bold uppercase ${
             event.mode === 'Online'
@@ -61,26 +56,21 @@ export const EventCard: React.FC<EventCardProps> = ({
         </span>
       </div>
 
-      {/* Main Content Area */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
-          {/* Organizer Box matching image_22355b25.png */}
           <div className="inline-block border-[1.5px] border-black bg-white px-2 py-0.5 text-xs font-bold text-black mb-2 shadow-[1px_1px_0px_#000]">
             {event.organizer}
           </div>
 
-          {/* Event Title */}
           <h3 className="text-base sm:text-lg font-black text-black leading-snug group-hover:underline decoration-2 underline-offset-2">
             {event.title}
           </h3>
 
-          {/* Minimal Description */}
           <p className="mt-2 text-xs text-neutral-600 font-medium line-clamp-2 leading-relaxed">
             {event.description}
           </p>
         </div>
 
-        {/* Tags Row matching image_22355b25.png */}
         <div className="mt-4 pt-3 border-t-[1.5px] border-black/15 flex flex-wrap items-center gap-1.5 text-xs font-bold">
           {event.city && (
             <span className="bg-[#DCFCE7] border border-black/40 px-2 py-0.5 text-[11px] text-black font-bold">
@@ -106,7 +96,6 @@ export const EventCard: React.FC<EventCardProps> = ({
           )}
         </div>
 
-        {/* Venue Line */}
         {event.venue && (
           <div className="mt-2.5 flex items-start gap-1.5 text-xs text-neutral-600 font-medium truncate">
             <MapPin className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
@@ -115,9 +104,10 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
       </div>
 
-      {/* Bottom Action Footer */}
       <div className="bg-[#FAF8F5] border-t-[2px] border-black px-4 py-3 flex items-center justify-between gap-2">
         <button
+          type="button"
+          aria-label={`View details for ${event.title}`}
           onClick={(e) => {
             e.stopPropagation();
             onSelectEvent(event);

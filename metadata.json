@@ -1,6 +1,0 @@
-{
-  "name": "EventSapien",
-  "description": "Open-source college event discovery platform brought to you by CodeSapiens TamilNadu.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

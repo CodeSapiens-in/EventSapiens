@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React, { useState } from 'react';
@@ -11,13 +11,11 @@ import { EventSapienMascot } from './EventSapienMascot';
 interface NavbarProps {
   currentView: 'home' | 'past-events';
   onNavigate: (view: 'home' | 'past-events') => void;
-  onOpenContributeModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
-  onNavigate,
-  onOpenContributeModal
+  onNavigate
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -29,16 +27,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="w-full bg-[#FFF8DC] pt-5 pb-3">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between gap-6">
-        {/* Top-Left: Bigger Monkey Logo + Bigger Name */}
         <a
-          href="/"
+          href={import.meta.env.BASE_URL}
           onClick={(e) => {
             e.preventDefault();
             handleNav('home');
           }}
           className="flex items-center gap-3.5 group cursor-pointer"
         >
-          {/* Logo with 100% transparent background (clean & crisp) */}
           <div className="shrink-0">
             <EventSapienMascot variant="logo" />
           </div>
@@ -48,7 +44,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </a>
 
-        {/* Top-Right: Past Events link + Contribute Button (No GitHub in top bar) */}
         <div className="hidden sm:flex items-center gap-5">
           <button
             onClick={() => handleNav(currentView === 'home' ? 'past-events' : 'home')}

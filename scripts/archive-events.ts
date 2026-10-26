@@ -1,17 +1,22 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Automated Event Archiver Script
  * Usage:
  *   npx tsx scripts/archive-events.ts [--dry-run] [--date=YYYY-MM-DD]
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parse } from 'smol-toml';
 import type { EventItem, RawEventToml } from '../src/types/event';
-import { isArchivedEligible } from '../src/lib/event-utils';
+import {
+  getEffectiveDateString,
+  isArchivedEligible,
+  validateEventData
+} from '../src/lib/event-utils';
 
 const EVENTS_DIR = path.resolve(process.cwd(), 'events');
 const ARCHIVE_FILE = path.resolve(process.cwd(), 'src/data/archived.json');
@@ -31,6 +36,7 @@ export interface ArchiveRunResult {
 }
 
 export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): ArchiveRunResult {
+  if (customDate) getEffectiveDateString(customDate);
   console.log(`[Eventsapiens Archiver] Running archiver (dryRun: ${dryRun}, date: ${customDate || 'today'})...`);
 
   if (!fs.existsSync(EVENTS_DIR)) {
@@ -44,11 +50,26 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
     try {
       const raw = fs.readFileSync(ARCHIVE_FILE, 'utf-8');
       existingArchived = JSON.parse(raw);
-    } catch (e) {
-      console.error(`Error reading ${ARCHIVE_FILE}, initializing empty list:`, e);
-      existingArchived = [];
+    } catch (error) {
+      throw new Error(`Cannot read ${ARCHIVE_FILE}; refusing to overwrite it`, { cause: error });
     }
   }
+
+  if (!Array.isArray(existingArchived)) {
+    throw new Error(`Archive file ${ARCHIVE_FILE} must contain a JSON array`);
+  }
+
+  existingArchived.forEach((event, index) => {
+    const validation = validateEventData(event);
+    if (!event.id || typeof event.id !== 'string') {
+      validation.errors.push('Archived event must have a non-empty string "id"');
+    }
+    if (!validation.valid || validation.errors.length > 0) {
+      throw new Error(
+        `Invalid archived event at entry ${index + 1}: ${validation.errors.join('; ')}`
+      );
+    }
+  });
 
   const existingIds = new Set(existingArchived.map((e) => e.id));
   const existingSignatures = new Set(
@@ -61,6 +82,7 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
   const filesToDelete: string[] = [];
   let duplicateCount = 0;
   let skippedCount = 0;
+  const parseErrors: string[] = [];
 
   for (const filename of eventFiles) {
     const filePath = path.join(EVENTS_DIR, filename);
@@ -69,6 +91,11 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
 
     try {
       const parsed = parse(content) as unknown as RawEventToml;
+      const validation = validateEventData(parsed, filename);
+      if (!validation.valid) {
+        parseErrors.push(`${filename}: ${validation.errors.join('; ')}`);
+        continue;
+      }
 
       // Check if event is eligible for archiving (end_date or event_date < reference date)
       if (isArchivedEligible(parsed, customDate)) {
@@ -84,7 +111,6 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
           newlyArchived.push({
             ...parsed,
             id: slug,
-            isArchived: true,
             tags: Array.isArray(parsed.tags) ? parsed.tags : []
           });
           filesToDelete.push(filePath);
@@ -92,9 +118,15 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
       } else {
         skippedCount++;
       }
-    } catch (err) {
-      console.error(`Failed to parse ${filename}:`, err);
+    } catch (error) {
+      parseErrors.push(
+        `${filename}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
+  }
+
+  if (parseErrors.length > 0) {
+    throw new Error(`Cannot archive invalid event files:\n${parseErrors.join('\n')}`);
   }
 
   const result: ArchiveRunResult = {
@@ -128,7 +160,14 @@ export function runArchiver(dryRun = isDryRun, customDate = referenceDateStr): A
   return result;
 }
 
-// Execute when invoked directly from CLI
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runArchiver();
+const isDirectExecution =
+  process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+if (isDirectExecution) {
+  try {
+    runArchiver();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  }
 }

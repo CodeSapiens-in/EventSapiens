@@ -1,21 +1,43 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
-import type { EventItem, MonthGroup, RawEventToml, RegistrationStatus } from '../types/event';
+import type { EventItem, MonthGroup, RegistrationStatus } from '../types/event';
 
-// Current reference date for date computations (allows testing with mock dates, defaults to today)
-export const getEffectiveDate = (override?: string): Date => {
-  if (override) {
-    const [y, m, d] = override.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d));
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const EVENT_MODES = ['Online', 'Offline', 'Hybrid'] as const;
+const MILLISECONDS_PER_DAY = 86_400_000;
+
+function isValidDateString(value: unknown): value is string {
+  if (typeof value !== 'string' || !DATE_PATTERN.test(value)) return false;
+
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
   }
-  return new Date();
-};
+}
 
 export const getEffectiveDateString = (override?: string): string => {
-  if (override) return override;
+  if (override) {
+    if (!isValidDateString(override)) {
+      throw new Error(`Invalid reference date "${override}"; expected YYYY-MM-DD`);
+    }
+    return override;
+  }
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = String(now.getUTCMonth() + 1).padStart(2, '0');
@@ -44,7 +66,7 @@ export function getRegistrationStatus(
     // Calculate difference in days
     const today = new Date(todayStr + 'T00:00:00Z').getTime();
     const dead = new Date(deadline + 'T00:00:00Z').getTime();
-    const diffDays = Math.ceil((dead - today) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil((dead - today) / MILLISECONDS_PER_DAY);
     if (diffDays <= 3 && diffDays >= 0) {
       return 'Closing Soon';
     }
@@ -81,12 +103,12 @@ const MONTH_SHORT = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
-export function getMonthKey(dateStr: string): string {
+function getMonthKey(dateStr: string): string {
   const parts = dateStr.split('-');
   return `${parts[0]}-${parts[1]}`;
 }
 
-export function getMonthLabel(dateStr: string): string {
+function getMonthLabel(dateStr: string): string {
   const parts = dateStr.split('-');
   const year = parts[0];
   const monthIndex = parseInt(parts[1], 10) - 1;
@@ -170,9 +192,7 @@ export function groupEventsByMonth(
   });
 }
 
-/**
- * Groups events into simply "this month" and "upcoming" (matching image_22355b25.png)
- */
+/** Groups active events into the current month and later events. */
 export function groupEventsIntoThisMonthAndUpcoming(
   events: EventItem[],
   refDateStr?: string
@@ -299,6 +319,12 @@ export function validateEventData(
 
   const ev = data as Record<string, unknown>;
 
+  if (filename && !/^[a-z0-9-]+\.toml$/.test(filename)) {
+    errors.push(
+      `Filename "${filename}" must use lowercase letters, numbers, and hyphens only`
+    );
+  }
+
   // Required fields: title, description, organizer, category, mode, event_date
   if (!ev.title || typeof ev.title !== 'string' || !ev.title.trim()) {
     errors.push('Missing or empty required field: "title"');
@@ -313,48 +339,101 @@ export function validateEventData(
     errors.push('Missing or empty required field: "category"');
   }
 
-  const validModes = ['Online', 'Offline', 'Hybrid'];
-  if (!ev.mode || typeof ev.mode !== 'string' || !validModes.includes(ev.mode)) {
-    errors.push(`Field "mode" must be one of: ${validModes.join(', ')}`);
+  if (
+    !ev.mode ||
+    typeof ev.mode !== 'string' ||
+    !EVENT_MODES.includes(ev.mode as (typeof EVENT_MODES)[number])
+  ) {
+    errors.push(`Field "mode" must be one of: ${EVENT_MODES.join(', ')}`);
   }
 
-  // Date format checks: YYYY-MM-DD
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!ev.event_date || typeof ev.event_date !== 'string' || !dateRegex.test(ev.event_date)) {
-    errors.push('Required field "event_date" must be in YYYY-MM-DD format');
+  if (!isValidDateString(ev.event_date)) {
+    errors.push('Required field "event_date" must be a valid date in YYYY-MM-DD format');
   }
 
-  if (ev.end_date && (typeof ev.end_date !== 'string' || !dateRegex.test(ev.end_date))) {
-    errors.push('Optional field "end_date" must be in YYYY-MM-DD format');
+  if (ev.end_date !== undefined && !isValidDateString(ev.end_date)) {
+    errors.push('Optional field "end_date" must be a valid date in YYYY-MM-DD format');
   }
 
-  if (ev.end_date && ev.event_date && typeof ev.event_date === 'string' && typeof ev.end_date === 'string') {
+  if (isValidDateString(ev.end_date) && isValidDateString(ev.event_date)) {
     if (ev.end_date < ev.event_date) {
       errors.push(`"end_date" (${ev.end_date}) cannot be earlier than "event_date" (${ev.event_date})`);
     }
   }
 
   if (
-    ev.registration_deadline &&
-    (typeof ev.registration_deadline !== 'string' || !dateRegex.test(ev.registration_deadline))
+    ev.registration_deadline !== undefined &&
+    !isValidDateString(ev.registration_deadline)
   ) {
-    errors.push('Optional field "registration_deadline" must be in YYYY-MM-DD format');
+    errors.push(
+      'Optional field "registration_deadline" must be a valid date in YYYY-MM-DD format'
+    );
   }
 
-  // URL format checks
-  if (ev.registration_url && typeof ev.registration_url === 'string') {
-    try {
-      new URL(ev.registration_url);
-    } catch {
-      errors.push('Field "registration_url" must be a valid URL starting with http:// or https://');
+  if (
+    isValidDateString(ev.registration_deadline) &&
+    isValidDateString(ev.event_date) &&
+    ev.registration_deadline > ev.event_date
+  ) {
+    errors.push(
+      `"registration_deadline" (${ev.registration_deadline}) cannot be later than "event_date" (${ev.event_date})`
+    );
+  }
+
+  const optionalStringFields = [
+    'city',
+    'venue',
+    'fee',
+    'contact_email'
+  ] as const;
+  for (const field of optionalStringFields) {
+    if (ev[field] !== undefined && typeof ev[field] !== 'string') {
+      errors.push(`Optional field "${field}" must be a string`);
     }
   }
 
-  if (ev.website && typeof ev.website === 'string') {
-    try {
-      new URL(ev.website);
-    } catch {
-      errors.push('Field "website" must be a valid URL');
+  const urlFields = ['registration_url', 'website', 'banner_url', 'logo_url'] as const;
+  for (const field of urlFields) {
+    const value = ev[field];
+    if (value !== undefined && (typeof value !== 'string' || !isHttpUrl(value))) {
+      errors.push(`Optional field "${field}" must be a valid HTTP(S) URL`);
+    }
+  }
+
+  if (ev.tags !== undefined) {
+    if (!Array.isArray(ev.tags) || ev.tags.some((tag) => typeof tag !== 'string')) {
+      errors.push('Optional field "tags" must be an array of strings');
+    }
+  }
+
+  if (ev.stages !== undefined) {
+    if (!Array.isArray(ev.stages)) {
+      errors.push('Optional field "stages" must be an array');
+    } else {
+      ev.stages.forEach((stage, index) => {
+        if (!stage || typeof stage !== 'object') {
+          errors.push(`Stage ${index + 1} must be an object`);
+          return;
+        }
+
+        const value = stage as Record<string, unknown>;
+        if (typeof value.name !== 'string' || !value.name.trim()) {
+          errors.push(`Stage ${index + 1} must have a non-empty "name"`);
+        }
+        if (!isValidDateString(value.date)) {
+          errors.push(`Stage ${index + 1} must have a valid "date" in YYYY-MM-DD format`);
+        }
+        if (
+          value.mode !== undefined &&
+          (typeof value.mode !== 'string' ||
+            !EVENT_MODES.includes(value.mode as (typeof EVENT_MODES)[number]))
+        ) {
+          errors.push(`Stage ${index + 1} has an invalid "mode"`);
+        }
+        if (value.venue !== undefined && typeof value.venue !== 'string') {
+          errors.push(`Stage ${index + 1} field "venue" must be a string`);
+        }
+      });
     }
   }
 
@@ -400,33 +479,4 @@ export function generateGoogleCalendarUrl(event: EventItem): string {
   }
 
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${start}/${end}`;
-}
-
-/**
- * Generates an .ics file content for download
- */
-export function generateIcsContent(event: EventItem): string {
-  const start = event.event_date.replace(/-/g, '');
-  const end = (event.end_date || event.event_date).replace(/-/g, '');
-  const summary = event.title.replace(/[,;]/g, ' ');
-  const description = (event.description || '').replace(/\n/g, '\\n');
-  const location = [event.venue, event.city].filter(Boolean).join(', ') || event.mode;
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Eventsapiens//CodeSapiens TamilNadu//EN',
-    'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT',
-    `UID:${event.id}@eventsapiens.codesapiens.in`,
-    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-    `DTSTART;VALUE=DATE:${start}`,
-    `DTEND;VALUE=DATE:${end}`,
-    `SUMMARY:${summary}`,
-    `DESCRIPTION:${description}`,
-    `LOCATION:${location}`,
-    'STATUS:CONFIRMED',
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
 }

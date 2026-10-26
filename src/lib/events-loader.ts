@@ -1,11 +1,12 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import { parse } from 'smol-toml';
 import type { EventItem, RawEventToml } from '../types/event';
 import archivedEventsRaw from '../data/archived.json';
+import { validateEventData } from './event-utils';
 
 // Discover all active TOML files in /events/ at build time
 const tomlFiles = import.meta.glob('/events/*.toml', {
@@ -30,12 +31,16 @@ export function loadActiveEvents(): EventItem[] {
     try {
       const parsed = parse(rawContent) as unknown as RawEventToml;
       const slug = filename.replace(/\.toml$/, '');
+      const validation = validateEventData(parsed, filename);
+
+      if (!validation.valid) {
+        console.error(`Invalid event data at ${path}:`, validation.errors);
+        continue;
+      }
 
       events.push({
         ...parsed,
         id: slug,
-        filename,
-        isArchived: false,
         // Ensure tags is an array
         tags: Array.isArray(parsed.tags) ? parsed.tags : []
       });
@@ -53,11 +58,18 @@ export function loadActiveEvents(): EventItem[] {
 export function loadArchivedEvents(): EventItem[] {
   if (cachedArchivedEvents) return cachedArchivedEvents;
 
-  const list = (archivedEventsRaw as unknown as EventItem[]).map((item) => ({
-    ...item,
-    isArchived: true,
-    tags: Array.isArray(item.tags) ? item.tags : []
-  }));
+  const list = (archivedEventsRaw as unknown as EventItem[]).flatMap((item) => {
+    const validation = validateEventData(item);
+    if (!item.id || typeof item.id !== 'string') {
+      validation.errors.push('Archived event is missing a string "id"');
+    }
+    if (validation.errors.length > 0) {
+      console.error(`Invalid archived event "${item.id || 'unknown'}":`, validation.errors);
+      return [];
+    }
+
+    return [{ ...item, tags: Array.isArray(item.tags) ? item.tags : [] }];
+  });
 
   // Sort archived events descending (newest first)
   list.sort((a, b) => b.event_date.localeCompare(a.event_date));
@@ -65,7 +77,7 @@ export function loadArchivedEvents(): EventItem[] {
   return list;
 }
 
-export function getAllEvents(): EventItem[] {
+function getAllEvents(): EventItem[] {
   return [...loadActiveEvents(), ...loadArchivedEvents()];
 }
 

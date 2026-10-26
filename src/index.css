@@ -5,69 +5,48 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-:root {
-  --ink: #171717;
-  --paper: #fffdf5;
-  --accent-yellow: #ffde59;
-  --accent-lime: #e8ff54;
-  --accent-coral: #ff7051;
-  --accent-blue: #38b6ff;
-  --border-width: 2.5px;
-  --hard-shadow: 4px 4px 0 #171717;
+html {
+  scroll-behavior: smooth;
 }
 
-/* Neo-Brutalist Core Styles */
-.nb-border {
-  border: 2.5px solid #171717;
+body {
+  margin: 0;
+  min-width: 320px;
 }
 
-.nb-border-t {
-  border-top: 2.5px solid #171717;
+:focus-visible {
+  outline: 3px solid #38b6ff;
+  outline-offset: 3px;
 }
 
-.nb-border-b {
-  border-bottom: 2.5px solid #171717;
+@keyframes mascot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
-.nb-shadow-sm {
-  box-shadow: 2px 2px 0 #171717;
+.animate-mascot-float {
+  animation: mascot-float 3.8s ease-in-out infinite;
 }
 
-.nb-shadow {
-  box-shadow: 4px 4px 0 #171717;
-}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-.nb-shadow-lg {
-  box-shadow: 6px 6px 0 #171717;
-}
-
-.nb-button {
-  border: 2.5px solid #171717;
-  box-shadow: 3px 3px 0 #171717;
-  font-weight: 800;
-  transition: transform 100ms ease, box-shadow 100ms ease;
-}
-
-.nb-button:hover:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 #171717;
-}
-
-.nb-button:active:not(:disabled) {
-  transform: translate(3px, 3px);
-  box-shadow: 0px 0px 0 #171717;
-}
-
-.nb-card {
-  border: 2.5px solid #171717;
-  box-shadow: 4px 4px 0 #171717;
-  background-color: #ffffff;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-}
-
-.nb-card-hover:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 #171717;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Custom scrollbars */

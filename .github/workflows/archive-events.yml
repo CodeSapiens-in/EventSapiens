@@ -17,6 +17,13 @@ on:
         default: ''
         type: string
 
+permissions:
+  contents: write
+
+concurrency:
+  group: archive-events
+  cancel-in-progress: false
+
 jobs:
   archive:
     name: Archive Concluded Events
@@ -28,25 +35,27 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: 1.4.4
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run Archive Script
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          REFERENCE_DATE: ${{ inputs.reference_date }}
         run: |
-          ARGS=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          ARGS=()
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=("--dry-run")
           fi
-          if [ -n "${{ inputs.reference_date }}" ]; then
-            ARGS="$ARGS --date=${{ inputs.reference_date }}"
+          if [ -n "$REFERENCE_DATE" ]; then
+            ARGS+=("--date=$REFERENCE_DATE")
           fi
-          npx tsx scripts/archive-events.ts $ARGS
+          bun run archive -- "${ARGS[@]}"
 
       - name: Commit and Push Changes (if not dry run)
         if: ${{ inputs.dry_run != true }}

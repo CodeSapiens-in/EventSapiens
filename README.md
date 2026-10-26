@@ -67,8 +67,11 @@ eventsapiens/
 │   ├── data/
 │   │   └── archived.json               # Concluded events historical archive
 │   ├── lib/
+│   │   ├── event-toml.ts               # Safe contributor TOML serialization
 │   │   ├── event-utils.ts              # Date calculations, statuses, validation
 │   │   └── events-loader.ts            # Vite eager TOML loader
+│   ├── hooks/
+│   │   └── useModalLifecycle.ts         # Shared accessible modal behavior
 │   ├── types/
 │   │   └── event.ts                    # TypeScript types & schemas
 │   ├── App.tsx                         # Main app root
@@ -78,6 +81,7 @@ eventsapiens/
 ├── CONTRIBUTING.md                     # Dedicated guide for developer code edits
 ├── CODE_OF_CONDUCT.md                  # Community standards
 ├── LICENSE                             # MIT Open Source License
+├── SECURITY.md                         # Private vulnerability reporting policy
 ├── package.json                        # Scripts & dependencies
 └── vite.config.ts                      # Vite configuration
 ```
@@ -87,8 +91,8 @@ eventsapiens/
 ## 🚀 Getting Started (Developers)
 
 ### Prerequisites
-- Node.js 18+ or 20+
-- npm 9+ (or Bun)
+- Node.js 20.19+ (Node.js 22 LTS recommended)
+- Bun 1.4+
 
 ### Installation & Local Run
 
@@ -97,14 +101,14 @@ eventsapiens/
 git clone https://github.com/CodeSapiens-in/EventSapiens.git
 cd EventSapiens
 
-# Install dependencies
-npm install
+# Install the exact locked dependencies
+bun install --frozen-lockfile
 
 # Start Vite development server
-npm run dev
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
@@ -112,12 +116,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | Command | Description |
 | :--- | :--- |
-| `npm run dev` | Starts the Vite development server on port 3000 |
-| `npm run build` | Compiles TypeScript and builds the production bundle |
-| `npm run lint` | Runs TypeScript type checking (`tsc --noEmit`) |
-| `npm run validate` | Validates all active TOML files against schema, dates, and duplicate rules |
-| `npm run archive` | Transitions concluded events from `events/*.toml` into `src/data/archived.json` |
-| `npm run archive -- --dry-run` | Previews archiving without modifying files |
+| `bun run dev` | Starts the Vite development server on port 5173 |
+| `bun run build` | Compiles TypeScript and builds the production bundle |
+| `bun run lint` | Runs strict TypeScript type checking (`tsc --noEmit`) |
+| `bun run validate` | Validates all active TOML files against schema, dates, and duplicate rules |
+| `bun run archive` | Transitions concluded events from `events/*.toml` into `src/data/archived.json` |
+| `bun run archive:dry-run` | Previews archiving without modifying files |
+| `bun run check` | Runs validation, type checking, and a production build |
 
 ---
 

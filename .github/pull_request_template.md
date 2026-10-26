@@ -21,13 +21,14 @@ Please indicate the type of contribution:
 - [ ] Did **NOT** edit `src/data/archived.json` manually (archiving is automated).
 - [ ] All required fields (`title`, `description`, `organizer`, `category`, `mode`, `event_date`) are provided.
 - [ ] Dates follow `YYYY-MM-DD`.
-- [ ] Ran `npm run validate` locally (or used the website generator) and validated successfully.
+- [ ] Ran `bun run validate` locally (or used the website generator) and validated successfully.
 
 ---
 
 ### If Contributing Code / Website Edits (see [CONTRIBUTING.md](CONTRIBUTING.md))
 - **Summary of changes:** 
 - **Related issue / discussion:** 
-- [ ] Verified build succeeds with `npm run build`.
-- [ ] Verified TypeScript passes with `npm run lint`.
+- [ ] Verified build succeeds with `bun run build`.
+- [ ] Verified TypeScript passes with `bun run lint`.
+- [ ] Ran the full local quality suite with `bun run check`.
 - [ ] Followed the repository's styling and zero-pill typographic design principles.
