@@ -1,0 +1,40 @@
+# Eventsapiens Event Template
+# File naming convention: events/<college-or-event-slug>.toml
+# Example: events/anna-univ-kurukshetra-2026.toml
+# Required fields: title, description, organizer, category, mode, event_date
+
+title = "Campus Hackathon 2026"
+description = "A 24-hour inter-college hackathon empowering students to build open-source solutions."
+organizer = "CEG Tech Forum, Anna University"
+category = "Hackathon" # Hackathon | Workshop | Symposium | Conference | Competition | Meetup
+mode = "Hybrid" # Online | Offline | Hybrid
+
+# Date format: YYYY-MM-DD
+event_date = "2026-11-14"
+end_date = "2026-11-15"
+
+# Registration details
+registration_deadline = "2026-11-05"
+registration_url = "https://example-college.edu/register"
+fee = "Free" # or "₹150 / Team"
+
+# Location (required if Offline or Hybrid)
+city = "Chennai"
+venue = "Ada Lovelace Auditorium, College Campus"
+
+# Search tags & metadata
+tags = ["Hackathon", "Open Source", "Web Dev", "Students"]
+website = "https://example-college.edu/hackathon"
+contact_email = "events@example-college.edu"
+
+# Optional: For Hybrid events with distinct stages
+# [[stages]]
+# name = "Online Screening Round"
+# date = "2026-11-08"
+# mode = "Online"
+
+# [[stages]]
+# name = "24-Hour Offline Grand Finale"
+# date = "2026-11-14"
+# mode = "Offline"
+# venue = "College Campus, Chennai"

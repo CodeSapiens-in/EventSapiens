@@ -1,0 +1,26 @@
+title = "Shaastra: IIT Madras Annual Technical Festival"
+description = "Asia's first ISO 9001:2015 certified student-run technical festival at Indian Institute of Technology Madras, featuring Shaastra Hackathon, Aerofest, AI symposia, and industrial workshops."
+organizer = "IIT Madras Student Body"
+category = "Symposium"
+mode = "Hybrid"
+event_date = "2027-01-08"
+end_date = "2027-01-11"
+registration_deadline = "2026-12-28"
+registration_url = "https://shaastra.org"
+city = "Chennai"
+venue = "IIT Madras Campus, Sardar Patel Road, Adyar, Chennai"
+tags = ["Shaastra", "IIT Madras", "Symposium", "Hackathon", "Robotics", "Exhibition"]
+fee = "Varies by Track"
+website = "https://shaastra.org"
+contact_email = "outreach@shaastra.org"
+
+[[stages]]
+name = "Virtual Workshops & Qualification Quizzes"
+date = "2027-01-05"
+mode = "Online"
+
+[[stages]]
+name = "4-Day Main Festival & Hackathon Finals"
+date = "2027-01-08"
+mode = "Offline"
+venue = "IIT Madras Campus, Chennai"

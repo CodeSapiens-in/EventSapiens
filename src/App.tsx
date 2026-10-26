@@ -1,0 +1,222 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Navbar } from './components/Navbar';
+import { HeroIntro } from './components/HeroIntro';
+import { EventDiscoveryBar } from './components/EventDiscoveryBar';
+import { MonthSection } from './components/MonthSection';
+import { PastEventsPage } from './components/PastEventsPage';
+import { EventDetailModal } from './components/EventDetailModal';
+import { ContributeSection } from './components/ContributeSection';
+import { ContributeModal } from './components/ContributeModal';
+import { TamilNaduTechCard } from './components/TamilNaduTechCard';
+import { Footer } from './components/Footer';
+import { loadActiveEvents, loadArchivedEvents, getEventById } from './lib/events-loader';
+import { groupEventsIntoThisMonthAndUpcoming, filterEvents } from './lib/event-utils';
+import type { EventItem } from './types/event';
+import { Inbox } from 'lucide-react';
+
+const CURRENT_APP_DATE = '2026-10-25';
+
+export default function App() {
+  const [currentView, setCurrentView] = useState<'home' | 'past-events'>('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMode, setSelectedMode] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const [isContributeModalOpen, setIsContributeModalOpen] = useState(false);
+
+  // Load events
+  const activeEvents = useMemo(() => loadActiveEvents(), []);
+  const archivedEvents = useMemo(() => loadArchivedEvents(), []);
+
+  // Unique categories for active events
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    activeEvents.forEach((ev) => {
+      if (ev.category) set.add(ev.category);
+    });
+    return Array.from(set).sort();
+  }, [activeEvents]);
+
+  // Support URL hash deep-linking (e.g. #ssn-invente-hackathon)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash === 'past-events') {
+        setCurrentView('past-events');
+      } else if (hash && hash !== 'contribute' && hash !== 'events-section') {
+        const found = getEventById(hash);
+        if (found) {
+          setSelectedEvent(found);
+        }
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleSelectEvent = (event: EventItem) => {
+    setSelectedEvent(event);
+    window.history.replaceState(null, '', `#${event.id}`);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedEvent(null);
+    window.history.replaceState(
+      null,
+      '',
+      currentView === 'past-events' ? '#past-events' : window.location.pathname
+    );
+  };
+
+  const handleNavigate = (view: 'home' | 'past-events') => {
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (view === 'past-events') {
+      window.history.replaceState(null, '', '#past-events');
+    } else {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
+  // Filter active events
+  const filteredActiveEvents = useMemo(() => {
+    return filterEvents(
+      activeEvents,
+      searchQuery,
+      selectedMode,
+      selectedCategory,
+      'all',
+      CURRENT_APP_DATE
+    );
+  }, [activeEvents, searchQuery, selectedMode, selectedCategory]);
+
+  // Group active events into this month and upcoming
+  const monthGroups = useMemo(() => {
+    return groupEventsIntoThisMonthAndUpcoming(filteredActiveEvents, CURRENT_APP_DATE);
+  }, [filteredActiveEvents]);
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedMode('all');
+    setSelectedCategory('all');
+  };
+
+  const handleExploreClick = () => {
+    const el = document.getElementById('events-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FFF8DC] text-black flex flex-col font-sans selection:bg-[#FFDE59] selection:text-black">
+      {/* Navbar with CodeSapiens style */}
+      <Navbar
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onOpenContributeModal={() => setIsContributeModalOpen(true)}
+      />
+
+      <main className="flex-1">
+        {currentView === 'home' ? (
+          <>
+            <HeroIntro
+              onExploreClick={handleExploreClick}
+              onOpenContributeModal={() => setIsContributeModalOpen(true)}
+            />
+
+            {/* Bento Events Section */}
+            <section id="events-section" className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 pt-8">
+              <div className="mb-6">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-black tracking-tight">
+                  Events around you!
+                </h2>
+              </div>
+
+              {/* Event Discovery Controls (Mode dropdown, Category dropdown, Search, NO status filter) */}
+              <EventDiscoveryBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedMode={selectedMode}
+                onModeChange={setSelectedMode}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                categories={categories}
+                totalResults={filteredActiveEvents.length}
+                onResetFilters={handleResetFilters}
+              />
+
+              {/* Bento Grid Month Sections */}
+              {monthGroups.length > 0 ? (
+                <div className="mt-4">
+                  {monthGroups.map((group) => (
+                    <MonthSection
+                      key={group.key}
+                      monthGroup={group}
+                      onSelectEvent={handleSelectEvent}
+                      referenceDateStr={CURRENT_APP_DATE}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border-[2.5px] border-black bg-white shadow-[4px_4px_0px_#000] p-12 text-center my-8">
+                  <div className="w-12 h-12 border-2 border-black bg-[#FFDE59] shadow-[2px_2px_0px_#000] flex items-center justify-center mx-auto text-black mb-3">
+                    <Inbox className="w-6 h-6 stroke-[2.5]" />
+                  </div>
+                  <h3 className="text-lg font-black text-black">No events found</h3>
+                  <p className="mt-1 text-xs text-neutral-600 max-w-sm mx-auto">
+                    Try adjusting your search terms or filters.
+                  </p>
+                  <button
+                    onClick={handleResetFilters}
+                    className="mt-4 px-4 py-2 bg-black text-white text-xs font-bold border border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Community Inspiration Shout-out to tamilnadu.tech */}
+            <TamilNaduTechCard />
+
+            {/* Contribute Section */}
+            <ContributeSection onOpenContributeModal={() => setIsContributeModalOpen(true)} />
+          </>
+        ) : (
+          /* Separate Past Events Page */
+          <PastEventsPage
+            archivedEvents={archivedEvents}
+            onSelectEvent={handleSelectEvent}
+            onBackToHome={() => handleNavigate('home')}
+            referenceDateStr={CURRENT_APP_DATE}
+          />
+        )}
+      </main>
+
+      {/* Full-width Black Footer (matching image_bc717026.png) */}
+      <Footer onNavigate={handleNavigate} />
+
+      {/* Clean Bento Event Detail Modal (No TOML structure inside) */}
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={handleCloseModal}
+        referenceDateStr={CURRENT_APP_DATE}
+      />
+
+      {/* In-app TOML Generator for PR Contributions */}
+      <ContributeModal
+        isOpen={isContributeModalOpen}
+        onClose={() => setIsContributeModalOpen(false)}
+      />
+    </div>
+  );
+}
