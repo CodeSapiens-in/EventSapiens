@@ -1,9 +1,9 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Calendar,
@@ -21,6 +21,8 @@ import {
   getRegistrationStatus,
   generateGoogleCalendarUrl
 } from '../lib/event-utils';
+import { copyText } from '../lib/clipboard';
+import { useModalLifecycle } from '../hooks/useModalLifecycle';
 
 interface EventDetailModalProps {
   event: EventItem | null;
@@ -34,20 +36,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   referenceDateStr
 }) => {
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (event) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [event, onClose]);
+  useModalLifecycle(Boolean(event), onClose);
 
   if (!event) return null;
 
@@ -61,9 +50,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const googleCalUrl = generateGoogleCalendarUrl(event);
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}#${event.id}`;
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(shareUrl);
+    const shareUrl = new URL(`#${event.id}`, window.location.href).toString();
+    if (await copyText(shareUrl)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -72,11 +60,15 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-none animate-in fade-in duration-100"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="relative w-full max-w-2xl bg-white border-[3px] border-black shadow-[8px_8px_0px_#000] overflow-hidden flex flex-col max-h-[92vh]"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-detail-title"
       >
         {/* Modal Top Bar */}
         <div className="bg-[#FFDE59] border-b-[2.5px] border-black px-5 py-3.5 flex items-center justify-between gap-4">
@@ -91,6 +83,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
           <button
             onClick={onClose}
+            type="button"
+            data-modal-autofocus
             className="p-1 border-[2px] border-black bg-white text-black hover:bg-black hover:text-white transition-colors cursor-pointer"
             aria-label="Close"
           >
@@ -101,7 +95,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 bg-[#FFFDF5]">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight leading-snug">
+            <h2 id="event-detail-title" className="text-xl sm:text-2xl font-black text-black tracking-tight leading-snug">
               {event.title}
             </h2>
             <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-700 mt-1">
@@ -207,11 +201,11 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer CTAs (Minimal & Clean, no .ics) */}
         <div className="p-4 border-t-[2.5px] border-black bg-white flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               onClick={handleShare}
+              type="button"
               className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-black bg-white hover:bg-neutral-100 border-[1.5px] border-black cursor-pointer shadow-[1.5px_1.5px_0px_#000]"
             >
               {copied ? <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 stroke-[2.5]" />}

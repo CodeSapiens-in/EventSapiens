@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React from 'react';
@@ -20,7 +20,6 @@ export const MonthSection: React.FC<MonthSectionProps> = ({
 }) => {
   return (
     <section className="mb-12 last:mb-6">
-      {/* Month Header (Clean, minimal, matching image_22355b25.png & image_5b315586.png) */}
       <div className="flex items-center justify-between border-b-[2.5px] border-black pb-3 mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
@@ -42,7 +41,6 @@ export const MonthSection: React.FC<MonthSectionProps> = ({
         </span>
       </div>
 
-      {/* Bento-styled Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {monthGroup.events.map((event) => (
           <EventCard

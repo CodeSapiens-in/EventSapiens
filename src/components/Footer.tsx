@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React from 'react';
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface FooterProps {
-  onNavigate?: (view: 'home' | 'past-events') => void;
+  onNavigate: (view: 'home' | 'past-events') => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
@@ -65,14 +65,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Right: Quick Links & Socials */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8">
           <div className="flex items-center gap-5 text-xs font-semibold text-neutral-300">
-            {onNavigate && (
-              <button
-                onClick={() => onNavigate('past-events')}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Past Events
-              </button>
-            )}
+            <button
+              onClick={() => onNavigate('past-events')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Past Events
+            </button>
             <a
               href="https://github.com/CodeSapiens-in/EventSapiens"
               target="_blank"

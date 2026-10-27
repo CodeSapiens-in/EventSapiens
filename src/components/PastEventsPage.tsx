@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React, { useState, useMemo } from 'react';
@@ -60,10 +60,8 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
   return (
     <div className="py-8 bg-[#FFF8DC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Top Header matching image_5b315586.png */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b-[2.5px] border-black">
           <div>
-            {/* Tag pill matching screenshot */}
             <div className="inline-block border-[1.5px] border-black bg-[#BAE6FD] px-2.5 py-0.5 text-xs font-mono font-black uppercase text-black mb-3 shadow-[1.5px_1.5px_0px_#000]">
               PAST EVENTS &amp; MEETUPS
             </div>
@@ -86,13 +84,13 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
           </button>
         </div>
 
-        {/* Minimal Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center py-6">
           <div className="sm:col-span-6 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black">
               <Search className="w-4 h-4 stroke-[2.5]" />
             </div>
             <input
+              aria-label="Search past events"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -103,6 +101,7 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-black"
+                aria-label="Clear past event search"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -111,6 +110,7 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
 
           <div className="sm:col-span-3">
             <select
+              aria-label="Filter past events by participation mode"
               value={selectedMode}
               onChange={(e) => setSelectedMode(e.target.value)}
               className="w-full px-3 py-2.5 bg-white border-[2px] border-black shadow-[2px_2px_0px_#000] text-xs font-bold text-black focus:outline-none cursor-pointer"
@@ -124,6 +124,7 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
 
           <div className="sm:col-span-3">
             <select
+              aria-label="Filter past events by category"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-3 py-2.5 bg-white border-[2px] border-black shadow-[2px_2px_0px_#000] text-xs font-bold text-black focus:outline-none cursor-pointer"
@@ -151,7 +152,6 @@ export const PastEventsPage: React.FC<PastEventsPageProps> = ({
           </div>
         )}
 
-        {/* Bento Grid */}
         {filtered.length > 0 ? (
           <div className="space-y-10">
             {monthGroups.map((group) => (

@@ -1,11 +1,15 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Copy, Check, Download, ExternalLink, Code2, AlertCircle } from 'lucide-react';
 import { validateEventData } from '../lib/event-utils';
+import { copyText } from '../lib/clipboard';
+import { createEventSlug, serializeEventToToml } from '../lib/event-toml';
+import { useModalLifecycle } from '../hooks/useModalLifecycle';
+import type { EventMode, RawEventToml } from '../types/event';
 
 interface ContributeModalProps {
   isOpen: boolean;
@@ -17,30 +21,18 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
   const [description, setDescription] = useState('');
   const [organizer, setOrganizer] = useState('');
   const [category, setCategory] = useState('Hackathon');
-  const [mode, setMode] = useState<'Online' | 'Offline' | 'Hybrid'>('Offline');
-  const [eventDate, setEventDate] = useState('2026-11-20');
-  const [endDate, setEndDate] = useState('2026-11-21');
-  const [regDeadline, setRegDeadline] = useState('2026-11-15');
+  const [mode, setMode] = useState<EventMode>('Offline');
+  const [eventDate, setEventDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [regDeadline, setRegDeadline] = useState('');
   const [regUrl, setRegUrl] = useState('');
-  const [city, setCity] = useState('Chennai');
+  const [city, setCity] = useState('');
   const [venue, setVenue] = useState('');
-  const [fee, setFee] = useState('Free');
-  const [tagsInput, setTagsInput] = useState('Hackathon, Students, AI');
+  const [fee, setFee] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
+  useModalLifecycle(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -49,10 +41,10 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
     .map((t) => t.trim())
     .filter(Boolean);
 
-  const eventPayload = {
-    title: title || 'My College Event',
-    description: description || 'Description of the college event.',
-    organizer: organizer || 'College Tech Club',
+  const eventPayload: RawEventToml = {
+    title,
+    description,
+    organizer,
     category,
     mode,
     event_date: eventDate,
@@ -67,46 +59,20 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
   const validation = validateEventData(eventPayload);
 
-  const slug = (title || 'my-college-event')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-
+  const slug = createEventSlug(title);
   const filename = `${slug || 'new-event'}.toml`;
-
-  const tomlOutput = [
-    `title = "${eventPayload.title.replace(/"/g, '\\"')}"`,
-    `description = "${eventPayload.description.replace(/"/g, '\\"')}"`,
-    `organizer = "${eventPayload.organizer.replace(/"/g, '\\"')}"`,
-    `category = "${eventPayload.category}"`,
-    `mode = "${eventPayload.mode}"`,
-    `event_date = "${eventPayload.event_date}"`,
-    eventPayload.end_date ? `end_date = "${eventPayload.end_date}"` : null,
-    eventPayload.registration_deadline
-      ? `registration_deadline = "${eventPayload.registration_deadline}"`
-      : null,
-    eventPayload.registration_url
-      ? `registration_url = "${eventPayload.registration_url}"`
-      : null,
-    eventPayload.city ? `city = "${eventPayload.city}"` : null,
-    eventPayload.venue ? `venue = "${eventPayload.venue.replace(/"/g, '\\"')}"` : null,
-    eventPayload.fee ? `fee = "${eventPayload.fee}"` : null,
-    eventPayload.tags.length > 0
-      ? `tags = [${eventPayload.tags.map((t) => `"${t}"`).join(', ')}]`
-      : null
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const tomlOutput = serializeEventToToml(eventPayload);
 
   const handleCopy = async () => {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(tomlOutput);
+    if (!validation.valid) return;
+    if (await copyText(tomlOutput)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleDownload = () => {
+    if (!validation.valid) return;
     const blob = new Blob([tomlOutput], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -121,16 +87,20 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-none animate-in fade-in duration-100"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="relative w-full max-w-4xl bg-[#FFFDF5] border-[3px] border-[#171717] shadow-[8px_8px_0px_#171717] overflow-hidden flex flex-col max-h-[92vh]"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contribute-modal-title"
       >
         {/* Brutalist Header */}
         <div className="bg-[#FFDE59] border-b-[2.5px] border-black p-4 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-base sm:text-lg font-black text-black flex items-center gap-2">
+            <h2 id="contribute-modal-title" className="text-base sm:text-lg font-black text-black flex items-center gap-2">
               <Code2 className="w-5 h-5 stroke-[2.5]" />
               <span>Contribute an Event</span>
             </h2>
@@ -140,6 +110,8 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
           </div>
           <button
             onClick={onClose}
+            type="button"
+            data-modal-autofocus
             className="p-1 border-[2px] border-black bg-white text-black hover:bg-black hover:text-white transition-colors cursor-pointer"
             aria-label="Close"
           >
@@ -152,10 +124,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
           {/* Form Controls */}
           <div className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-[#171717] font-black uppercase mb-1">
+              <label htmlFor="event-title" className="block text-[#171717] font-black uppercase mb-1">
                 EVENT TITLE *
               </label>
               <input
+                id="event-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -166,10 +139,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-organizer" className="block text-[#171717] font-black uppercase mb-1">
                   ORGANIZER / COLLEGE *
                 </label>
                 <input
+                  id="event-organizer"
                   type="text"
                   value={organizer}
                   onChange={(e) => setOrganizer(e.target.value)}
@@ -179,10 +153,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-category" className="block text-[#171717] font-black uppercase mb-1">
                   CATEGORY *
                 </label>
                 <select
+                  id="event-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-3 py-2 bg-white border-2 border-[#171717] shadow-[2px_2px_0px_#171717] font-black uppercase text-[#171717] focus:outline-none cursor-pointer"
@@ -199,12 +174,13 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-mode" className="block text-[#171717] font-black uppercase mb-1">
                   PARTICIPATION MODE *
                 </label>
                 <select
+                  id="event-mode"
                   value={mode}
-                  onChange={(e) => setMode(e.target.value as any)}
+                  onChange={(e) => setMode(e.target.value as EventMode)}
                   className="w-full px-3 py-2 bg-white border-2 border-[#171717] shadow-[2px_2px_0px_#171717] font-black uppercase text-[#171717] focus:outline-none cursor-pointer"
                 >
                   <option value="Offline">OFFLINE</option>
@@ -214,10 +190,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-fee" className="block text-[#171717] font-black uppercase mb-1">
                   FEE POLICY
                 </label>
                 <input
+                  id="event-fee"
                   type="text"
                   value={fee}
                   onChange={(e) => setFee(e.target.value)}
@@ -229,10 +206,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-start-date" className="block text-[#171717] font-black uppercase mb-1">
                   START DATE *
                 </label>
                 <input
+                  id="event-start-date"
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
@@ -241,10 +219,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="event-end-date" className="block text-[#171717] font-black uppercase mb-1">
                   END DATE
                 </label>
                 <input
+                  id="event-end-date"
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
@@ -253,10 +232,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">
+                <label htmlFor="registration-deadline" className="block text-[#171717] font-black uppercase mb-1">
                   DEADLINE
                 </label>
                 <input
+                  id="registration-deadline"
                   type="date"
                   value={regDeadline}
                   onChange={(e) => setRegDeadline(e.target.value)}
@@ -267,8 +247,9 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">CITY</label>
+                <label htmlFor="event-city" className="block text-[#171717] font-black uppercase mb-1">CITY</label>
                 <input
+                  id="event-city"
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
@@ -278,8 +259,9 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-[#171717] font-black uppercase mb-1">VENUE</label>
+                <label htmlFor="event-venue" className="block text-[#171717] font-black uppercase mb-1">VENUE</label>
                 <input
+                  id="event-venue"
                   type="text"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
@@ -290,10 +272,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-[#171717] font-black uppercase mb-1">
+              <label htmlFor="registration-url" className="block text-[#171717] font-black uppercase mb-1">
                 REGISTRATION URL
               </label>
               <input
+                id="registration-url"
                 type="url"
                 value={regUrl}
                 onChange={(e) => setRegUrl(e.target.value)}
@@ -303,10 +286,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-[#171717] font-black uppercase mb-1">
+              <label htmlFor="event-description" className="block text-[#171717] font-black uppercase mb-1">
                 DESCRIPTION *
               </label>
               <textarea
+                id="event-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -316,10 +300,11 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-[#171717] font-black uppercase mb-1">
+              <label htmlFor="event-tags" className="block text-[#171717] font-black uppercase mb-1">
                 TAGS (COMMA SEPARATED)
               </label>
               <input
+                id="event-tags"
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
@@ -359,7 +344,9 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopy}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#171717] bg-[#FFDE59] hover:bg-[#FFE680] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] active:shadow-none transition-all cursor-pointer"
+                  type="button"
+                  disabled={!validation.valid}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#171717] bg-[#FFDE59] hover:bg-[#FFE680] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] active:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {copied ? <Check className="w-4 h-4 stroke-[3]" /> : <Copy className="w-4 h-4 stroke-[2.5]" />}
                   <span>{copied ? 'COPIED TOML!' : 'COPY TOML CODE'}</span>
@@ -367,7 +354,9 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
 
                 <button
                   onClick={handleDownload}
-                  className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#171717] bg-white hover:bg-[#FFFDF5] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] active:shadow-none transition-all cursor-pointer"
+                  type="button"
+                  disabled={!validation.valid}
+                  className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#171717] bg-white hover:bg-[#FFFDF5] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] active:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Download className="w-4 h-4 stroke-[2.5]" />
                   <span>DOWNLOAD</span>
@@ -375,12 +364,20 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ isOpen, onClos
               </div>
 
               <a
-                href={`https://github.com/CodeSapiens-in/EventSapiens/new/main?filename=events/${filename}&value=${encodeURIComponent(
-                  tomlOutput
-                )}`}
+                href={
+                  validation.valid
+                    ? `https://github.com/CodeSapiens-in/EventSapiens/new/main?filename=events/${filename}&value=${encodeURIComponent(
+                        tomlOutput
+                      )}`
+                    : undefined
+                }
+                aria-disabled={!validation.valid}
+                onClick={(event) => {
+                  if (!validation.valid) event.preventDefault();
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#FFFDF5] bg-[#171717] hover:bg-[#262626] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] transition-all cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-black uppercase tracking-wider text-[#FFFDF5] bg-[#171717] hover:bg-[#262626] border-2 border-[#171717] shadow-[3px_3px_0px_#171717] transition-all cursor-pointer aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
               >
                 <span>OPEN DIRECT GITHUB PULL REQUEST</span>
                 <ExternalLink className="w-4 h-4 stroke-[2.5]" />

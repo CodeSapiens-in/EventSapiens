@@ -1,14 +1,15 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Event Validation Script for CI and Pull Requests
  * Usage:
  *   npx tsx scripts/validate-events.ts
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parse } from 'smol-toml';
 import { validateEventData } from '../src/lib/event-utils';
 
@@ -27,18 +28,50 @@ export function validateAllEvents(): ValidationSummary {
 
   if (!fs.existsSync(EVENTS_DIR)) {
     console.error(`Events directory not found!`);
-    return { totalFiles: 0, validFiles: 0, invalidFiles: 0, errorsByFile: {} };
+    return {
+      totalFiles: 0,
+      validFiles: 0,
+      invalidFiles: 1,
+      errorsByFile: { events: ['Events directory not found'] }
+    };
   }
 
   // Load archived IDs to prevent collision
-  let archivedIds = new Set<string>();
+  const archivedIds = new Set<string>();
+  const archiveErrors: string[] = [];
   if (fs.existsSync(ARCHIVE_FILE)) {
     try {
-      const archived = JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf-8'));
-      archivedIds = new Set(archived.map((e: { id: string }) => e.id));
-    } catch (e) {
-      console.warn('Could not read archived.json:', e);
+      const archived: unknown = JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf-8'));
+      if (!Array.isArray(archived)) {
+        archiveErrors.push('Archive root must be an array');
+      } else {
+        archived.forEach((event, index) => {
+          const validation = validateEventData(event);
+          const id =
+            event && typeof event === 'object' && 'id' in event
+              ? (event as { id?: unknown }).id
+              : undefined;
+
+          if (typeof id !== 'string' || !id) {
+            validation.errors.push('Archived event must have a non-empty string "id"');
+          } else if (archivedIds.has(id)) {
+            validation.errors.push(`Duplicate archived event id "${id}"`);
+          } else {
+            archivedIds.add(id);
+          }
+
+          archiveErrors.push(
+            ...validation.errors.map((error) => `Entry ${index + 1}: ${error}`)
+          );
+        });
+      }
+    } catch (error) {
+      archiveErrors.push(
+        `Could not parse archive JSON: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
+  } else {
+    archiveErrors.push('Archive file not found');
   }
 
   const files = fs.readdirSync(EVENTS_DIR).filter((f) => f.endsWith('.toml') && !f.startsWith('_'));
@@ -46,8 +79,11 @@ export function validateAllEvents(): ValidationSummary {
   const seenTitles = new Set<string>();
 
   const errorsByFile: Record<string, string[]> = {};
+  if (archiveErrors.length > 0) {
+    errorsByFile['src/data/archived.json'] = archiveErrors;
+  }
   let validFiles = 0;
-  let invalidFiles = 0;
+  let invalidFiles = archiveErrors.length > 0 ? 1 : 0;
 
   for (const filename of files) {
     const filePath = path.join(EVENTS_DIR, filename);
@@ -80,14 +116,20 @@ export function validateAllEvents(): ValidationSummary {
       if (!valResult.valid) {
         fileErrors.push(...valResult.errors);
       } else {
-        const titleKey = ((parsed as any).title || '').trim().toLowerCase();
+        const event = parsed as Record<string, unknown>;
+        const title = typeof event.title === 'string' ? event.title : '';
+        const titleKey = title.trim().toLowerCase();
         if (titleKey && seenTitles.has(titleKey)) {
-          fileErrors.push(`Duplicate title detected: Another active event shares the exact title "${(parsed as any).title}"`);
+          fileErrors.push(
+            `Duplicate title detected: Another active event shares the exact title "${title}"`
+          );
         }
         seenTitles.add(titleKey);
       }
-    } catch (err: any) {
-      fileErrors.push(`TOML syntax error: ${err.message || err}`);
+    } catch (error) {
+      fileErrors.push(
+        `TOML syntax error: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     if (fileErrors.length > 0) {
@@ -121,8 +163,10 @@ export function validateAllEvents(): ValidationSummary {
   };
 }
 
-// CLI execution
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution =
+  process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+if (isDirectExecution) {
   const result = validateAllEvents();
   if (result.invalidFiles > 0) {
     process.exit(1);

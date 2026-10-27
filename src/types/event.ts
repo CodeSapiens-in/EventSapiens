@@ -1,11 +1,11 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 export type EventMode = 'Online' | 'Offline' | 'Hybrid';
 
-export interface EventStage {
+interface EventStage {
   name: string; // e.g. "Online Screening", "Offline Grand Finale"
   date: string; // YYYY-MM-DD
   mode?: EventMode;
@@ -35,8 +35,6 @@ export interface RawEventToml {
 
 export interface EventItem extends RawEventToml {
   id: string;
-  filename?: string;
-  isArchived?: boolean;
 }
 
 export type RegistrationStatus = 'Open' | 'Closing Soon' | 'Closed' | 'Not Specified';

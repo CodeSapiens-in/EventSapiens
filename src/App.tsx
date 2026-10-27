@@ -1,9 +1,9 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroIntro } from './components/HeroIntro';
 import { EventDiscoveryBar } from './components/EventDiscoveryBar';
@@ -15,11 +15,13 @@ import { ContributeModal } from './components/ContributeModal';
 import { TamilNaduTechCard } from './components/TamilNaduTechCard';
 import { Footer } from './components/Footer';
 import { loadActiveEvents, loadArchivedEvents, getEventById } from './lib/events-loader';
-import { groupEventsIntoThisMonthAndUpcoming, filterEvents } from './lib/event-utils';
+import {
+  filterEvents,
+  getEffectiveDateString,
+  groupEventsIntoThisMonthAndUpcoming
+} from './lib/event-utils';
 import type { EventItem } from './types/event';
 import { Inbox } from 'lucide-react';
-
-const CURRENT_APP_DATE = '2026-10-25';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'past-events'>('home');
@@ -29,6 +31,7 @@ export default function App() {
 
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [isContributeModalOpen, setIsContributeModalOpen] = useState(false);
+  const referenceDate = useMemo(() => getEffectiveDateString(), []);
 
   // Load events
   const activeEvents = useMemo(() => loadActiveEvents(), []);
@@ -94,14 +97,14 @@ export default function App() {
       selectedMode,
       selectedCategory,
       'all',
-      CURRENT_APP_DATE
+      referenceDate
     );
-  }, [activeEvents, searchQuery, selectedMode, selectedCategory]);
+  }, [activeEvents, referenceDate, searchQuery, selectedMode, selectedCategory]);
 
   // Group active events into this month and upcoming
   const monthGroups = useMemo(() => {
-    return groupEventsIntoThisMonthAndUpcoming(filteredActiveEvents, CURRENT_APP_DATE);
-  }, [filteredActiveEvents]);
+    return groupEventsIntoThisMonthAndUpcoming(filteredActiveEvents, referenceDate);
+  }, [filteredActiveEvents, referenceDate]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -118,11 +121,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FFF8DC] text-black flex flex-col font-sans selection:bg-[#FFDE59] selection:text-black">
-      {/* Navbar with CodeSapiens style */}
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}
-        onOpenContributeModal={() => setIsContributeModalOpen(true)}
       />
 
       <main className="flex-1">
@@ -130,10 +131,8 @@ export default function App() {
           <>
             <HeroIntro
               onExploreClick={handleExploreClick}
-              onOpenContributeModal={() => setIsContributeModalOpen(true)}
             />
 
-            {/* Bento Events Section */}
             <section id="events-section" className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 pt-8">
               <div className="mb-6">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-black tracking-tight">
@@ -141,7 +140,6 @@ export default function App() {
                 </h2>
               </div>
 
-              {/* Event Discovery Controls (Mode dropdown, Category dropdown, Search, NO status filter) */}
               <EventDiscoveryBar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -154,7 +152,6 @@ export default function App() {
                 onResetFilters={handleResetFilters}
               />
 
-              {/* Bento Grid Month Sections */}
               {monthGroups.length > 0 ? (
                 <div className="mt-4">
                   {monthGroups.map((group) => (
@@ -162,7 +159,7 @@ export default function App() {
                       key={group.key}
                       monthGroup={group}
                       onSelectEvent={handleSelectEvent}
-                      referenceDateStr={CURRENT_APP_DATE}
+                      referenceDateStr={referenceDate}
                     />
                   ))}
                 </div>
@@ -185,34 +182,28 @@ export default function App() {
               )}
             </section>
 
-            {/* Community Inspiration Shout-out to tamilnadu.tech */}
             <TamilNaduTechCard />
 
-            {/* Contribute Section */}
             <ContributeSection onOpenContributeModal={() => setIsContributeModalOpen(true)} />
           </>
         ) : (
-          /* Separate Past Events Page */
           <PastEventsPage
             archivedEvents={archivedEvents}
             onSelectEvent={handleSelectEvent}
             onBackToHome={() => handleNavigate('home')}
-            referenceDateStr={CURRENT_APP_DATE}
+            referenceDateStr={referenceDate}
           />
         )}
       </main>
 
-      {/* Full-width Black Footer (matching image_bc717026.png) */}
       <Footer onNavigate={handleNavigate} />
 
-      {/* Clean Bento Event Detail Modal (No TOML structure inside) */}
       <EventDetailModal
         event={selectedEvent}
         onClose={handleCloseModal}
-        referenceDateStr={CURRENT_APP_DATE}
+        referenceDateStr={referenceDate}
       />
 
-      {/* In-app TOML Generator for PR Contributions */}
       <ContributeModal
         isOpen={isContributeModalOpen}
         onClose={() => setIsContributeModalOpen(false)}

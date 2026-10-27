@@ -55,8 +55,8 @@ cp events/_template.toml events/my-college-hackathon.toml
 # Edit events/my-college-hackathon.toml with your favorite editor
 
 # 4. Validate your TOML file syntax and dates
-npm install
-npm run validate
+bun install --frozen-lockfile
+bun run validate
 
 # 5. Commit, push, and open a PR
 git add events/my-college-hackathon.toml

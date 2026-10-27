@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React from 'react';
@@ -33,14 +33,13 @@ export const EventDiscoveryBar: React.FC<EventDiscoveryBarProps> = ({
 
   return (
     <div id="events-section" className="pt-6 pb-6">
-      {/* Event Discovery Controls Row */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-        {/* Search Bar */}
         <div className="sm:col-span-6 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black">
             <Search className="w-4 h-4 stroke-[2.5]" />
           </div>
           <input
+            aria-label="Search events"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -58,9 +57,9 @@ export const EventDiscoveryBar: React.FC<EventDiscoveryBarProps> = ({
           )}
         </div>
 
-        {/* Mode Filter: Must be Dropdown (per user request) */}
         <div className="sm:col-span-3">
           <select
+            aria-label="Filter events by participation mode"
             value={selectedMode}
             onChange={(e) => onModeChange(e.target.value)}
             className="w-full px-3 py-2.5 bg-white border-[2.5px] border-black shadow-[3px_3px_0px_#000] text-xs font-bold text-black focus:outline-none cursor-pointer"
@@ -72,9 +71,9 @@ export const EventDiscoveryBar: React.FC<EventDiscoveryBarProps> = ({
           </select>
         </div>
 
-        {/* Category Dropdown */}
         <div className="sm:col-span-3">
           <select
+            aria-label="Filter events by category"
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
             className="w-full px-3 py-2.5 bg-white border-[2.5px] border-black shadow-[3px_3px_0px_#000] text-xs font-bold text-black focus:outline-none cursor-pointer"
@@ -89,7 +88,6 @@ export const EventDiscoveryBar: React.FC<EventDiscoveryBarProps> = ({
         </div>
       </div>
 
-      {/* Results Count & Reset row */}
       <div className="flex items-center justify-between mt-3 text-xs font-bold text-black">
         <span className="font-mono">
           {totalResults} {totalResults === 1 ? 'event' : 'events'} found

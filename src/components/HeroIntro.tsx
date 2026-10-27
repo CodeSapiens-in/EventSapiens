@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 import React from 'react';
@@ -9,13 +9,9 @@ import { EventSapienMascot } from './EventSapienMascot';
 
 interface HeroIntroProps {
   onExploreClick: () => void;
-  onOpenContributeModal: () => void;
 }
 
-export const HeroIntro: React.FC<HeroIntroProps> = ({
-  onExploreClick,
-  onOpenContributeModal
-}) => {
+export const HeroIntro: React.FC<HeroIntroProps> = ({ onExploreClick }) => {
   return (
     <section className="bg-[#FFF8DC] min-h-[calc(100vh-5.5rem)] flex flex-col justify-center pb-12 pt-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full">
@@ -55,7 +51,6 @@ export const HeroIntro: React.FC<HeroIntroProps> = ({
             </div>
           </div>
 
-          {/* Right: Transparent Animated Monkey Mascot (With glint, ear-wiggle & float) */}
           <div className="shrink-0 flex items-center justify-center p-4">
             <EventSapienMascot variant="hero" />
           </div>

@@ -1,43 +1,38 @@
 {
-  "name": "react-example",
+  "name": "eventsapiens",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit",
-    "validate": "tsx scripts/validate-events.ts",
-    "archive": "tsx scripts/archive-events.ts"
+    "dev": "bun node_modules/vite/bin/vite.js --port=5173 --host=127.0.0.1 --strictPort",
+    "build": "bun node_modules/vite/bin/vite.js build",
+    "preview": "bun node_modules/vite/bin/vite.js preview",
+    "clean": "bun -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "typecheck": "bun node_modules/typescript/bin/tsc --noEmit",
+    "lint": "bun run typecheck",
+    "validate": "bun scripts/validate-events.ts",
+    "archive": "bun scripts/archive-events.ts",
+    "archive:dry-run": "bun scripts/archive-events.ts --dry-run",
+    "check": "bun run validate && bun run lint && bun run build"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@resvg/resvg-js": "^2.6.2",
-    "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^6.1.1",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
     "lucide-react": "^0.546.0",
-    "motion": "^12.23.24",
-    "pngjs": "^7.0.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "smol-toml": "^1.9.1",
-    "vite": "^8.3.0"
+    "smol-toml": "^1.9.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
     "@types/node": "^22.14.0",
-    "@types/pngjs": "^6.0.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vite": "^8.3.0"
   }
 }
