@@ -18,7 +18,18 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   return (
-    <footer className="w-full bg-[#0B0B0B] text-neutral-300 py-10 px-4 sm:px-8 border-t-[2.5px] border-black">
+    <div className="w-full">
+      {/* Landmark Illustration: Chennai Egmore & Mascot */}
+      <div className="w-full pointer-events-none select-none overflow-hidden">
+        <img
+          src={`${import.meta.env.BASE_URL}assets/images/footer%20image.png`}
+          alt="Chennai Egmore Station with EventSapien Mascot"
+          className="w-full h-auto block -mb-[2.5px]"
+          loading="lazy"
+        />
+      </div>
+
+      <footer id="site-footer" className="w-full bg-[#0B0B0B] text-neutral-300 py-10 px-4 sm:px-8 border-t-[2.5px] border-black">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         {/* Left: Brand & Info */}
         <div className="space-y-1.5">
@@ -131,5 +142,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
       </div>
     </footer>
+    </div>
   );
 };

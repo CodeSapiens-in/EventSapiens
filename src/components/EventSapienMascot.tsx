@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 
 interface EventSapienMascotProps {
   variant?: 'logo' | 'hero';
+  showSpeechBubble?: boolean;
 }
 
 const MASCOT_QUOTES = [
@@ -19,7 +20,8 @@ const MASCOT_QUOTES = [
 ];
 
 export const EventSapienMascot: React.FC<EventSapienMascotProps> = ({
-  variant = 'hero'
+  variant = 'hero',
+  showSpeechBubble = true
 }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isBouncing, setIsBouncing] = useState(false);
@@ -59,7 +61,7 @@ export const EventSapienMascot: React.FC<EventSapienMascotProps> = ({
       style={{ cursor: !isLogo ? 'pointer' : 'default' }}
     >
       {/* Interactive Speech Bubble for Hero variant */}
-      {!isLogo && (
+      {!isLogo && showSpeechBubble && (
         <div
           className={`absolute -top-10 sm:-top-12 z-20 transition-all duration-300 pointer-events-none ${
             isHovered ? 'scale-105 opacity-100' : 'opacity-90'

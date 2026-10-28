@@ -119,11 +119,39 @@ export default function App() {
     }
   };
 
+  const handleHeroSearch = (query: string, city?: string) => {
+    let finalQuery = query.trim();
+    if (city && city !== 'all' && city !== 'Tamil Nadu') {
+      finalQuery = finalQuery ? `${finalQuery} ${city}` : city;
+    }
+    setSearchQuery(finalQuery);
+    const el = document.getElementById('events-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleHeroCategorySelect = (category: string) => {
+    const matched = categories.find((c) => c.toLowerCase() === category.toLowerCase());
+    if (matched) {
+      setSelectedCategory(matched);
+      setSearchQuery('');
+    } else {
+      setSelectedCategory('all');
+      setSearchQuery(category);
+    }
+    const el = document.getElementById('events-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF8DC] text-black flex flex-col font-sans selection:bg-[#FFDE59] selection:text-black">
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}
+        onOpenContributeModal={() => setIsContributeModalOpen(true)}
       />
 
       <main className="flex-1">
@@ -131,6 +159,9 @@ export default function App() {
           <>
             <HeroIntro
               onExploreClick={handleExploreClick}
+              onSearch={handleHeroSearch}
+              onSelectCategory={handleHeroCategorySelect}
+              initialSearchQuery={searchQuery}
             />
 
             <section id="events-section" className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 pt-8">

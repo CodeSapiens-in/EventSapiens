@@ -8,7 +8,7 @@ import { ExternalLink, Sparkles, Github } from 'lucide-react';
 
 export const TamilNaduTechCard: React.FC = () => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 my-8">
+    <div id="tamilnadu-tech-section" className="max-w-7xl mx-auto px-4 sm:px-8 my-8">
       <div className="border-[2.5px] border-black bg-[#FFF8DC] p-6 sm:p-8 shadow-[5px_5px_0px_#000] relative overflow-hidden">
         {/* Decorative corner accent */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
