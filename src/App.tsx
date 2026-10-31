@@ -151,7 +151,6 @@ export default function App() {
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}
-        onOpenContributeModal={() => setIsContributeModalOpen(true)}
       />
 
       <main className="flex-1">
