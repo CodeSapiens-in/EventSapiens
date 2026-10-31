@@ -52,11 +52,12 @@ export default function App() {
       const hash = window.location.hash.replace(/^#/, '');
       if (hash === 'past-events') {
         setCurrentView('past-events');
+        setSelectedEvent(null);
       } else if (hash && hash !== 'contribute' && hash !== 'events-section') {
         const found = getEventById(hash);
-        if (found) {
-          setSelectedEvent(found);
-        }
+        setSelectedEvent(found || null);
+      } else {
+        setSelectedEvent(null);
       }
     };
 
@@ -67,12 +68,12 @@ export default function App() {
 
   const handleSelectEvent = (event: EventItem) => {
     setSelectedEvent(event);
-    window.history.replaceState(null, '', `#${event.id}`);
+    window.history.pushState(null, '', `#${event.id}`);
   };
 
   const handleCloseModal = () => {
     setSelectedEvent(null);
-    window.history.replaceState(
+    window.history.pushState(
       null,
       '',
       currentView === 'past-events' ? '#past-events' : window.location.pathname

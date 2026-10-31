@@ -200,21 +200,13 @@ export function groupEventsIntoThisMonthAndUpcoming(
   const todayStr = getEffectiveDateString(refDateStr);
   const currentMonthKey = getMonthKey(todayStr);
 
-  const eventClosingMonths = events
-    .map((e) => getMonthKey(e.registration_deadline || e.event_date))
-    .filter(Boolean)
-    .sort();
-
-  const hasCurrentMonth = eventClosingMonths.includes(currentMonthKey);
-  const activeMonthKey = hasCurrentMonth ? currentMonthKey : eventClosingMonths[0];
-
   const thisMonthEvents: EventItem[] = [];
   const upcomingEvents: EventItem[] = [];
 
   for (const event of events) {
     if (!event.event_date) continue;
     const closingKey = getMonthKey(event.registration_deadline || event.event_date);
-    if (closingKey === activeMonthKey) {
+    if (closingKey === currentMonthKey) {
       thisMonthEvents.push(event);
     } else {
       upcomingEvents.push(event);
@@ -462,7 +454,7 @@ export function validateEventData(
 export function generateGoogleCalendarUrl(event: EventItem): string {
   const title = encodeURIComponent(event.title);
   const details = encodeURIComponent(
-    `${event.description}\n\nOrganizer: ${event.organizer}\nRegistration: ${event.registration_url || 'N/A'}\nDiscovered via Eventsapiens (https://codesapiens.in)`
+    `${event.description}\n\nOrganizer: ${event.organizer}\nRegistration: ${event.registration_url || 'N/A'}\nDiscovered via EventSapiens (https://eventsapiens.tech)`
   );
   const location = encodeURIComponent([event.venue, event.city].filter(Boolean).join(', ') || event.mode);
 
