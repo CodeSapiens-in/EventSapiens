@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 Past Events
               </button>
               <a
-                href="https://github.com/CodeSapiens-in/EventSapiens"
+                href="https://github.com/SapiensCampus/EventSapiens"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors inline-flex items-center gap-1.5"

@@ -27,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleContributeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.open('https://github.com/CodeSapiens-in/EventSapiens', '_blank');
+    window.open('https://github.com/SapiensCampus/EventSapiens', '_blank');
   };
 
   return (
@@ -54,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
 
         {/* Right: Actions */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3">
           <button
             onClick={() => handleNav(currentView === 'home' ? 'past-events' : 'home')}
             className="border-2 border-black bg-white/70 hover:bg-white text-black px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-[2px_2px_0px_#000] cursor-pointer transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
