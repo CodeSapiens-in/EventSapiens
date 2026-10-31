@@ -200,13 +200,21 @@ export function groupEventsIntoThisMonthAndUpcoming(
   const todayStr = getEffectiveDateString(refDateStr);
   const currentMonthKey = getMonthKey(todayStr);
 
+  const eventClosingMonths = events
+    .map((e) => getMonthKey(e.registration_deadline || e.event_date))
+    .filter(Boolean)
+    .sort();
+
+  const hasCurrentMonth = eventClosingMonths.includes(currentMonthKey);
+  const activeMonthKey = hasCurrentMonth ? currentMonthKey : eventClosingMonths[0];
+
   const thisMonthEvents: EventItem[] = [];
   const upcomingEvents: EventItem[] = [];
 
   for (const event of events) {
     if (!event.event_date) continue;
-    const evMonthKey = getMonthKey(event.event_date);
-    if (evMonthKey === currentMonthKey) {
+    const closingKey = getMonthKey(event.registration_deadline || event.event_date);
+    if (closingKey === activeMonthKey) {
       thisMonthEvents.push(event);
     } else {
       upcomingEvents.push(event);
@@ -221,7 +229,7 @@ export function groupEventsIntoThisMonthAndUpcoming(
   if (thisMonthEvents.length > 0) {
     groups.push({
       key: 'this-month',
-      label: 'This month',
+      label: 'Registration closing this month',
       isThisMonth: true,
       events: thisMonthEvents
     });
