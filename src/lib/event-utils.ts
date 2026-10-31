@@ -38,11 +38,20 @@ export const getEffectiveDateString = (override?: string): string => {
     }
     return override;
   }
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(now.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  } catch {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 };
 
 /**
@@ -81,16 +90,16 @@ export function getRegistrationStatus(
 }
 
 /**
- * Checks whether an event has concluded and is eligible for archiving.
- * Uses end_date if provided, otherwise event_date.
+ * Checks whether an event has concluded or registration has closed and is eligible for archiving.
+ * Checks registration_deadline first; falls back to end_date or event_date.
  */
 export function isArchivedEligible(
-  event: { event_date: string; end_date?: string },
+  event: { event_date: string; end_date?: string; registration_deadline?: string },
   refDateStr?: string
 ): boolean {
   const todayStr = getEffectiveDateString(refDateStr);
-  const compareDate = event.end_date || event.event_date;
-  return compareDate < todayStr;
+  const cutoffDate = event.registration_deadline || event.end_date || event.event_date;
+  return cutoffDate < todayStr;
 }
 
 const MONTH_NAMES = [
