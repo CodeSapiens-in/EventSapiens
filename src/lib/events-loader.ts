@@ -6,7 +6,7 @@
 import { parse } from 'smol-toml';
 import type { EventItem, RawEventToml } from '../types/event';
 import archivedEventsRaw from '../data/archived.json';
-import { validateEventData } from './event-utils';
+import { validateEventData, isArchivedEligible } from './event-utils';
 
 // Discover all active TOML files in /events/ at build time
 const tomlFiles = import.meta.glob('/events/*.toml', {
@@ -35,6 +35,11 @@ export function loadActiveEvents(): EventItem[] {
 
       if (!validation.valid) {
         console.error(`Invalid event data at ${path}:`, validation.errors);
+        continue;
+      }
+
+      // Automatically exclude events whose registration deadline or event date has passed
+      if (isArchivedEligible(parsed)) {
         continue;
       }
 
@@ -70,6 +75,28 @@ export function loadArchivedEvents(): EventItem[] {
 
     return [{ ...item, tags: Array.isArray(item.tags) ? item.tags : [] }];
   });
+
+  const existingIds = new Set(list.map((e) => e.id));
+
+  // Include any expired events from /events/ whose deadline has passed
+  for (const [path, module] of Object.entries(tomlFiles)) {
+    const filename = path.split('/').pop() || '';
+    if (filename.startsWith('_')) continue;
+
+    try {
+      const parsed = parse(module.default) as unknown as RawEventToml;
+      const slug = filename.replace(/\.toml$/, '');
+      if (isArchivedEligible(parsed) && !existingIds.has(slug)) {
+        list.push({
+          ...parsed,
+          id: slug,
+          tags: Array.isArray(parsed.tags) ? parsed.tags : []
+        });
+      }
+    } catch {
+      // Ignored here
+    }
+  }
 
   // Sort archived events descending (newest first)
   list.sort((a, b) => b.event_date.localeCompare(a.event_date));
